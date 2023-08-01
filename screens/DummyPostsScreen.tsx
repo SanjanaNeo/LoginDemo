@@ -27,6 +27,12 @@ const DummyPostScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  const handleLogout = () => {
+    // Implement the logout functionality here
+    // For example, clear user authentication data and navigate to LoginScreen
+    navigation.navigate('Login');
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Dummy Posts</Text>
@@ -36,6 +42,9 @@ const DummyPostScreen: React.FC = () => {
         keyExtractor={(item) => String(item.id)}
         style={styles.postList}
       />
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.buttonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -43,12 +52,13 @@ const DummyPostScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F9F3E6', // Light beige background color
+    paddingTop: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    marginVertical: 20,
+    marginBottom: 20,
     color: '#333',
     textAlign: 'center',
   },
@@ -67,6 +77,21 @@ const styles = StyleSheet.create({
   postTitle: {
     fontSize: 18,
     color: '#333',
+  },
+  logoutButton: {
+    backgroundColor: '#FF5722', // Vibrant orange button color
+    width: '80%',
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignSelf: 'center',
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

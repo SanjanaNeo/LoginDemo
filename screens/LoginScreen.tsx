@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
@@ -17,10 +17,30 @@ const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const navigation = useNavigation();
   const passwordInputRef = useRef<TextInput>(null);
 
   const handleLogin = async () => {
+    setEmailError('');
+    setPasswordError('');
+
+    if (!email.trim()) {
+      setEmailError('Email is required.');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setEmailError('Invalid email format.');
+      return;
+    }
+
+    if (!password.trim()) {
+      setPasswordError('Password is required.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       const response = await auth().signInWithEmailAndPassword(email, password);
@@ -54,11 +74,16 @@ const LoginScreen: React.FC = () => {
     setShowPassword(prevState => !prevState);
   };
 
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, emailError && styles.errorInput]}
         placeholder="Email"
         placeholderTextColor="#999"
         value={email}
@@ -68,10 +93,11 @@ const LoginScreen: React.FC = () => {
         returnKeyType="next"
         onSubmitEditing={() => passwordInputRef.current?.focus()}
       />
+      {emailError ? <Text style={styles.errorMessage}>{emailError}</Text> : null}
       <View style={styles.passwordContainer}>
         <TextInput
           ref={passwordInputRef}
-          style={styles.passwordInput}
+          style={[styles.passwordInput, passwordError && styles.errorInput]}
           placeholder="Password"
           placeholderTextColor="#999"
           secureTextEntry={!showPassword}
@@ -90,6 +116,9 @@ const LoginScreen: React.FC = () => {
           />
         </TouchableOpacity>
       </View>
+      {passwordError ? (
+        <Text style={styles.errorMessage}>{passwordError}</Text>
+      ) : null}
       <TouchableOpacity
         style={styles.loginButton}
         onPress={handleLogin}
@@ -172,6 +201,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  errorInput: {
+    borderColor: 'red',
+  },
+  errorMessage: {
+    color: 'red',
+    fontSize: 14,
+    marginBottom: 10,
   },
 });
 
