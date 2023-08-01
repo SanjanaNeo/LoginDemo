@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 
@@ -7,6 +7,7 @@ const RegistrationScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
 
   const handleRegister = async () => {
@@ -22,13 +23,16 @@ const RegistrationScreen: React.FC = () => {
       Alert.alert('Error', 'Passwords do not match. Please try again.');
     } else {
       try {
+        setIsLoading(true); // Show the loader
         // Create a new user with email and password
         const response = await auth().createUserWithEmailAndPassword(email, password);
+        setIsLoading(false); // Hide the loader after successful registration
         // Registration successful
         Alert.alert('Registration Successful', 'Welcome, ' + response.user.email + '!');
         // Navigate back to LoginScreen after successful registration
         navigation.navigate('Login');
       } catch (error) {
+        setIsLoading(false); // Hide the loader after registration failure
         // Handle registration error
         if (error.code === 'auth/email-already-in-use') {
           Alert.alert('Error', 'The email address is already in use. Please use a different email.');
@@ -37,6 +41,10 @@ const RegistrationScreen: React.FC = () => {
         }
       }
     }
+  };
+
+  const handleLogin = () => {
+    navigation.navigate('Login');
   };
 
   return (
@@ -66,8 +74,15 @@ const RegistrationScreen: React.FC = () => {
         value={confirmPassword}
         onChangeText={(text) => setConfirmPassword(text)}
       />
-      <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
+      <TouchableOpacity style={styles.registerButton} onPress={handleRegister} disabled={isLoading}>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.buttonText}>Register</Text>
+        )}
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.loginLink} onPress={handleLogin}>
+        <Text style={styles.loginLinkText}>Already have an account? Login here</Text>
       </TouchableOpacity>
     </View>
   );
@@ -78,7 +93,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F9F3E6', // Light beige background color
   },
   title: {
     fontSize: 32,
@@ -89,7 +104,7 @@ const styles = StyleSheet.create({
   input: {
     width: '80%',
     height: 50,
-    borderColor: '#ccc',
+    borderColor: '#E9B44C', // Light orange border color
     borderWidth: 1,
     borderRadius: 10,
     marginBottom: 20,
@@ -98,10 +113,13 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   registerButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#4CAF50', // Vibrant green button color
     width: '80%',
     paddingVertical: 15,
     borderRadius: 10,
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     color: '#fff',
@@ -109,6 +127,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  loginLink: {
+    marginBottom: 20,
+  },
+  loginLinkText: {
+    color: '#007AFF', // Vibrant blue color for login link
+    fontSize: 16,
+    textDecorationLine: 'underline',
+  },
 });
-
 export default RegistrationScreen;
