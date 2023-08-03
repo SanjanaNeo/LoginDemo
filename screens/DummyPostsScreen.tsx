@@ -1,37 +1,74 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  BackHandler,
+  Alert,
+} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+
+interface Post {
+  id: number;
+  title: string;
+}
 
 const DummyPostScreen: React.FC = () => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const navigation = useNavigation();
 
   useEffect(() => {
     fetch('https://jsonplaceholder.typicode.com/posts')
-      .then((response) => response.json())
-      .then((data) => setPosts(data))
-      .catch((error) => console.error('Error fetching posts:', error));
+      .then(response => response?.json())
+      .then(data => setPosts(data))
+      .catch(error => console.error('Error fetching posts:', error));
   }, []);
 
   const handlePostPress = (postId: number) => {
     // Navigate to PostDetailScreen and pass the selected postId as a parameter
-    navigation.navigate('PostDetail', { postId });
+    navigation.navigate('PostDetail', {postId});
   };
 
-  const renderPostItem = ({ item }) => (
+  const renderPostItem = ({item}: {item: Post}) => (
     <TouchableOpacity
       style={styles.postItem}
-      onPress={() => handlePostPress(item.id)}
-    >
-      <Text style={styles.postTitle}>{item.title}</Text>
+      onPress={() => handlePostPress(item?.id)}>
+      <Text style={styles.postTitle}>{item?.title}</Text>
     </TouchableOpacity>
   );
 
   const handleLogout = () => {
     // Implement the logout functionality here
-    // For example, clear user authentication data and navigate to LoginScreen
-    navigation.navigate('Login');
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Logout',
+        onPress: () => {
+          // After logout, navigate back to the LoginScreen
+          navigation.navigate('Login');
+        },
+      },
+    ]);
   };
+
+  // Intercept the hardware back button press and show an alert for logout confirmation
+  useEffect(() => {
+    const onHardwareBackPress = () => {
+      handleLogout(); // Show the logout confirmation alert
+      return true; // Prevent default back button behavior
+    };
+
+    BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
+
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', onHardwareBackPress);
+    };
+  });
 
   return (
     <View style={styles.container}>
@@ -39,7 +76,7 @@ const DummyPostScreen: React.FC = () => {
       <FlatList
         data={posts}
         renderItem={renderPostItem}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={item => String(item?.id)}
         style={styles.postList}
       />
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -52,7 +89,7 @@ const DummyPostScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F3E6', // Light beige background color
+    backgroundColor: '#F9F3E6',
     paddingTop: 20,
   },
   title: {
@@ -79,7 +116,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   logoutButton: {
-    backgroundColor: '#FF5722', // Vibrant orange button color
+    backgroundColor: '#FF5722',
     width: '80%',
     paddingVertical: 15,
     borderRadius: 10,

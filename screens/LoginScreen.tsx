@@ -12,75 +12,95 @@ import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
+interface FormData {
+  email: string;
+  password: string;
+  showPassword: boolean;
+  isLoading: boolean;
+  emailError: string;
+  passwordError: string;
+}
+
 const LoginScreen: FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [formData, setFormData] = useState<FormData>({
+    email: '',
+    password: '',
+    showPassword: false,
+    isLoading: false,
+    emailError: '',
+    passwordError: '',
+  });
+
   const navigation = useNavigation();
   const passwordInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
+
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData(prevData => ({
+      ...prevData,
+      [field]: value,
+    }));
+  };
 
   const handleLogin = async () => {
-    setEmailError('');
-    setPasswordError('');
-
-    if (!email.trim()) {
-      setEmailError('Email is required.');
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setEmailError('Invalid email format.');
-      return;
-    }
-
-    if (!password.trim()) {
-      setPasswordError('Password is required.');
-      return;
-    }
+    setFormData(prevData => ({
+      ...prevData,
+      emailError: '',
+      passwordError: '',
+    }));
 
     try {
-      setIsLoading(true);
+      setFormData(prevData => ({
+        ...prevData,
+        isLoading: true,
+      }));
 
       // Retrieve the array of user objects from AsyncStorage
       const usersData = await AsyncStorage.getItem('users');
-      const users = usersData ? JSON.parse(usersData) : [];
+      const users: Array<{email: string; password: string}> = usersData
+        ? JSON.parse(usersData)
+        : [];
 
       // Find the user object based on the entered email
-      const user = users.find(u => u.email === email);
+      const user = users.find(u => u.email === formData.email);
       console.log('user', user);
 
-      if (user && user.password === password) {
-        setIsLoading(false);
-
-        // If login is successful, reset the email and password fields
-        setEmail('');
-        setPassword('');
+      if (user && user.password === formData.password) {
+        setFormData(prevData => ({
+          ...prevData,
+          isLoading: false,
+          email: '', // Reset the email field
+          password: '', // Reset the password field
+        }));
 
         // Navigate to DummyPostsScreen
         Alert.alert('Login Successful', 'Welcome ' + user.email + '!');
         navigation.navigate('DummyPosts');
       } else {
-        setIsLoading(false);
+        setFormData(prevData => ({
+          ...prevData,
+          isLoading: false,
+          emailError: '',
+          passwordError: '',
+        }));
         // Handle login error
         Alert.alert(
           'Login Failed',
           'Invalid email or password. Please try again.',
         );
-        setEmail('');
-        setPassword('');
       }
     } catch (error) {
-      setIsLoading(false);
+      setFormData(prevData => ({
+        ...prevData,
+        isLoading: false,
+        email: '', // Reset the email field
+        password: '', // Reset the password field
+      }));
       // Handle login error
       Alert.alert(
         'Login Failed',
         'An error occurred while logging in. Please try again.',
       );
-      setEmail('');
-      setPassword('');
     }
   };
 
@@ -89,7 +109,10 @@ const LoginScreen: FC = () => {
   };
 
   const togglePasswordVisibility = () => {
-    setShowPassword(prevState => !prevState);
+    setFormData(prevData => ({
+      ...prevData,
+      showPassword: !prevData.showPassword,
+    }));
   };
 
   const isValidEmail = (email: string) => {
@@ -97,33 +120,45 @@ const LoginScreen: FC = () => {
     return emailRegex.test(email);
   };
 
+  const validatePassword = (password: string) => {
+    // Password must be at least 6 characters long
+    return password.length >= 6;
+  };
+
   return (
     <View style={styles.container}>
       <Icon name="user" size={60} color="#333" />
       <Text style={styles.title}>Welcome</Text>
-      <TextInput
-        style={[styles.input, emailError && styles.errorInput]}
-        placeholder="Email"
-        placeholderTextColor="#999"
-        value={email}
-        onChangeText={text => setEmail(text)}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        returnKeyType="next"
-        onSubmitEditing={() => passwordInputRef.current?.focus()}
-      />
-      {emailError ? (
-        <Text style={styles.errorMessage}>{emailError}</Text>
+      <View style={styles.inputContainer}>
+        <Icon name="envelope" size={20} color="#999" style={styles.inputIcon} />
+        <TextInput
+          style={[styles.input, formData.emailError && styles.errorInput]}
+          placeholder="Email"
+          placeholderTextColor="#999"
+          value={formData.email}
+          onChangeText={text => handleInputChange('email', text)}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          returnKeyType="next"
+          onSubmitEditing={() => emailInputRef.current?.focus()}
+        />
+      </View>
+      {formData.email.trim() !== '' && !isValidEmail(formData.email) ? (
+        <Text style={styles.errorMessage}>Invalid email format</Text>
       ) : null}
       <View style={styles.passwordContainer}>
+        <Icon name="lock" size={20} color="#999" style={styles.inputIcon} />
         <TextInput
           ref={passwordInputRef}
-          style={[styles.passwordInput, passwordError && styles.errorInput]}
+          style={[
+            styles.passwordInput,
+            formData.passwordError && styles.errorInput,
+          ]}
           placeholder="Password"
           placeholderTextColor="#999"
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={text => setPassword(text)}
+          secureTextEntry={!formData.showPassword}
+          value={formData.password}
+          onChangeText={text => handleInputChange('password', text)}
           returnKeyType="done"
           onSubmitEditing={handleLogin}
         />
@@ -131,20 +166,24 @@ const LoginScreen: FC = () => {
           style={styles.eyeIcon}
           onPress={togglePasswordVisibility}>
           <Icon
-            name={showPassword ? 'eye' : 'eye-slash'}
+            name={formData.showPassword ? 'eye' : 'eye-slash'}
             size={20}
             color="#999"
           />
         </TouchableOpacity>
       </View>
-      {passwordError ? (
-        <Text style={styles.errorMessage}>{passwordError}</Text>
+      {formData.password.trim() !== '' &&
+      !validatePassword(formData.password) ? (
+        <Text style={styles.errorMessage}>
+          Password must be at least 6 characters long
+        </Text>
       ) : null}
       <TouchableOpacity
+        testID="login-button"
         style={styles.loginButton}
         onPress={handleLogin}
-        disabled={isLoading}>
-        {isLoading ? (
+        disabled={formData.isLoading}>
+        {formData.isLoading ? (
           <ActivityIndicator color="#fff" size="small" />
         ) : (
           <Text style={styles.buttonText}>Login</Text>
@@ -162,7 +201,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9F3E6', // Light beige background color
+    backgroundColor: '#F9F3E6',
   },
   title: {
     fontSize: 32,
@@ -170,25 +209,32 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     color: '#333',
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     width: '80%',
-    height: 50,
-    borderColor: '#E9B44C', // Light orange border color
+    marginBottom: 20,
+    borderColor: '#E9B44C',
     borderWidth: 1,
     borderRadius: 10,
-    marginBottom: 20,
-    paddingLeft: 15,
+  },
+  inputIcon: {
+    padding: 10,
+  },
+  input: {
+    flex: 1,
+    height: 50,
     fontSize: 16,
     color: '#333',
   },
   passwordContainer: {
-    width: '80%',
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: '#E9B44C', // Light orange border color
+    width: '80%',
+    marginBottom: 20,
+    borderColor: '#E9B44C',
     borderWidth: 1,
     borderRadius: 10,
-    marginBottom: 20,
   },
   passwordInput: {
     flex: 1,
@@ -201,7 +247,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   loginButton: {
-    backgroundColor: '#FF5722', // Vibrant orange button color
+    backgroundColor: '#FF5722',
     width: '80%',
     paddingVertical: 15,
     borderRadius: 10,
@@ -210,7 +256,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   signupButton: {
-    backgroundColor: '#4CAF50', // Vibrant green button color
+    backgroundColor: '#4CAF50',
     width: '80%',
     paddingVertical: 15,
     borderRadius: 10,
@@ -228,8 +274,9 @@ const styles = StyleSheet.create({
   },
   errorMessage: {
     color: 'red',
-    fontSize: 14,
-    marginBottom: 10,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    marginBottom: 5,
   },
 });
 

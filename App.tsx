@@ -19,13 +19,29 @@ const Stack = createStackNavigator();
 const App: React.FC = () => {
   return (
     <NavigationContainer>
-    <Stack.Navigator initialRouteName="Login">
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Registration" component={RegistrationScreen} />
-      <Stack.Screen name="DummyPosts" component={DummyPostsScreen} />
-      <Stack.Screen name="PostDetail" component={PostDetailScreen} />
-    </Stack.Navigator>
-  </NavigationContainer>
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="Registration"
+          component={RegistrationScreen}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="DummyPosts"
+          component={DummyPostsScreen}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="PostDetail"
+          component={PostDetailScreen}
+          options={{headerShown: false}}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
 export default App;

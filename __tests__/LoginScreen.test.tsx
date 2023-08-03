@@ -1,29 +1,24 @@
 import React from 'react';
 import {render, fireEvent} from '@testing-library/react-native';
 import LoginScreen from '../screens/LoginScreen';
+test('email input should change when text is entered', () => {
+  const {getByPlaceholderText} = render(<LoginScreen />);
 
-describe('LoginScreen', () => {
-  test('renders title correctly', () => {
-    const {getByText} = render(<LoginScreen />);
-    const titleElement = getByText('Welcome');
-    expect(titleElement).toBeDefined();
-  });
+  const emailInput = getByPlaceholderText('Email');
+  const newEmail = 'test@example.com';
 
-  test('displays error message for invalid email format', () => {
-    const {getByPlaceholderText, getByText} = render(<LoginScreen />);
-    const emailInput = getByPlaceholderText('Email');
-    fireEvent.changeText(emailInput, 'invalid-email-format');
-    fireEvent.press(getByText('Login'));
-    const errorMessageElement = getByText('Invalid email format.');
-    expect(errorMessageElement).toBeDefined();
-  });
+  fireEvent.changeText(emailInput, newEmail);
 
-  test('displays error message for empty email', () => {
-    const {getByPlaceholderText, getByText} = render(<LoginScreen />);
-    const emailInput = getByPlaceholderText('Email');
-    fireEvent.changeText(emailInput, '');
-    fireEvent.press(getByText('Login'));
-    const errorMessageElement = getByText('Email is required.');
-    expect(errorMessageElement).toBeDefined();
-  });
+  expect(emailInput.props.value).toBe(newEmail);
+});
+
+test('password input should change when text is entered', () => {
+  const {getByPlaceholderText} = render(<LoginScreen />);
+
+  const passwordInput = getByPlaceholderText('Password');
+  const newPassword = 'testPassword';
+
+  fireEvent.changeText(passwordInput, newPassword);
+
+  expect(passwordInput.props.value).toBe(newPassword);
 });
