@@ -1,4 +1,4 @@
-import React, {useState, FC} from 'react';
+import React, {useState, FC, useMemo} from 'react';
 import {
   View,
   Text,
@@ -33,13 +33,14 @@ const RegistrationScreen: FC = () => {
 
   const navigation = useNavigation();
 
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  const validateEmail = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return (email: string) => emailRegex.test(email);
+  }, []);
 
-  const validatePassword = (password: string) => {
-    return password.length >= 6;
-  };
+  const validatePassword = useMemo(() => {
+    return (password: string) => password.length >= 6;
+  }, []);
 
   const handleRegister = async () => {
     const {email, password, confirmPassword} = formData;

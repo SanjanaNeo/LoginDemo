@@ -1,4 +1,4 @@
-import React, {useState, useRef, FC} from 'react';
+import React, {useState, useRef, FC, useMemo} from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,15 @@ const LoginScreen: FC = () => {
   const navigation = useNavigation();
   const passwordInputRef = useRef<TextInput>(null);
   const emailInputRef = useRef<TextInput>(null);
+
+  const isValidEmail = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return (email: string) => emailRegex.test(email);
+  }, []);
+
+  const validatePassword = useMemo(() => {
+    return (password: string) => password.length >= 6;
+  }, []);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prevData => ({
@@ -113,16 +122,6 @@ const LoginScreen: FC = () => {
       ...prevData,
       showPassword: !prevData.showPassword,
     }));
-  };
-
-  const isValidEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePassword = (password: string) => {
-    // Password must be at least 6 characters long
-    return password.length >= 6;
   };
 
   return (
