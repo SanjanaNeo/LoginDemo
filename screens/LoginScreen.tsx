@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, {useState, useRef, FC} from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,11 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import auth from '@react-native-firebase/auth';
+import {useNavigation} from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const LoginScreen: React.FC = () => {
+const LoginScreen: FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -43,23 +43,41 @@ const LoginScreen: React.FC = () => {
 
     try {
       setIsLoading(true);
-      const response = await auth().signInWithEmailAndPassword(email, password);
-      setIsLoading(false);
-      // If login is successful, reset the email and password fields
-      setEmail('');
-      setPassword('');
-      // Navigate to DummyPostsScreen
-      Alert.alert(
-        'Login Successful',
-        'Welcome back, ' + response.user.email + '!',
-      );
-      navigation.navigate('DummyPosts');
+
+      // Retrieve the array of user objects from AsyncStorage
+      const usersData = await AsyncStorage.getItem('users');
+      const users = usersData ? JSON.parse(usersData) : [];
+
+      // Find the user object based on the entered email
+      const user = users.find(u => u.email === email);
+      console.log('user', user);
+
+      if (user && user.password === password) {
+        setIsLoading(false);
+
+        // If login is successful, reset the email and password fields
+        setEmail('');
+        setPassword('');
+
+        // Navigate to DummyPostsScreen
+        Alert.alert('Login Successful', 'Welcome ' + user.email + '!');
+        navigation.navigate('DummyPosts');
+      } else {
+        setIsLoading(false);
+        // Handle login error
+        Alert.alert(
+          'Login Failed',
+          'Invalid email or password. Please try again.',
+        );
+        setEmail('');
+        setPassword('');
+      }
     } catch (error) {
       setIsLoading(false);
       // Handle login error
       Alert.alert(
         'Login Failed',
-        'Invalid email or password. Please try again.',
+        'An error occurred while logging in. Please try again.',
       );
       setEmail('');
       setPassword('');
@@ -81,6 +99,7 @@ const LoginScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <Icon name="user" size={60} color="#333" />
       <Text style={styles.title}>Welcome</Text>
       <TextInput
         style={[styles.input, emailError && styles.errorInput]}
@@ -93,7 +112,9 @@ const LoginScreen: React.FC = () => {
         returnKeyType="next"
         onSubmitEditing={() => passwordInputRef.current?.focus()}
       />
-      {emailError ? <Text style={styles.errorMessage}>{emailError}</Text> : null}
+      {emailError ? (
+        <Text style={styles.errorMessage}>{emailError}</Text>
+      ) : null}
       <View style={styles.passwordContainer}>
         <TextInput
           ref={passwordInputRef}

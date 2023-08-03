@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import auth from '@react-native-firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoginScreen from './LoginScreen';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const RegistrationScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigation = useNavigation();
 
   const handleRegister = async () => {
@@ -24,56 +28,105 @@ const RegistrationScreen: React.FC = () => {
     } else {
       try {
         setIsLoading(true); // Show the loader
-        // Create a new user with email and password
-        const response = await auth().createUserWithEmailAndPassword(email, password);
+  
+        // Check if the user already exists in AsyncStorage
+        const existingUsersData = await AsyncStorage.getItem('users');
+        const existingUsers = existingUsersData ? JSON.parse(existingUsersData) : [];
+  
+        const existingUser = existingUsers.find(user => user.email === email);
+        if (existingUser) {
+          setIsLoading(false); // Hide the loader
+          Alert.alert('Error', 'The email address is already in use. Please use a different email.');
+          return;
+        }
+  
+        // Create a new user object
+        const newUser = { email, password };
+  
+        // Add the new user to the array of users
+        const updatedUsers = [...existingUsers, newUser];
+  
+        // Save the updated array of users in AsyncStorage
+        await AsyncStorage.setItem('users', JSON.stringify(updatedUsers));
+  
         setIsLoading(false); // Hide the loader after successful registration
+  
         // Registration successful
-        Alert.alert('Registration Successful', 'Welcome, ' + response.user.email + '!');
+        Alert.alert('Registration Successful' + email + '!');
+  
         // Navigate back to LoginScreen after successful registration
-        navigation.navigate('Login');
+        navigation.navigate("Login");
       } catch (error) {
         setIsLoading(false); // Hide the loader after registration failure
+  
         // Handle registration error
-        if (error.code === 'auth/email-already-in-use') {
-          Alert.alert('Error', 'The email address is already in use. Please use a different email.');
-        } else {
-          Alert.alert('Error', 'Registration failed. Please try again.');
-        }
+        Alert.alert('Error', 'Registration failed. Please try again.');
       }
     }
   };
+  
+  
+  
 
   const handleLogin = () => {
-    navigation.navigate('Login');
+    navigation.navigate("Login");
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(prevState => !prevState);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(prevState => !prevState);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Registration Screen</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#999"
-        value={email}
-        onChangeText={(text) => setEmail(text)}
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#999"
-        secureTextEntry
-        value={password}
-        onChangeText={(text) => setPassword(text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        placeholderTextColor="#999"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={(text) => setConfirmPassword(text)}
-      />
+      <View style={styles.inputContainer}>
+        <Icon name="envelope" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          placeholder="Email"
+          placeholderTextColor="#999"
+          value={email}
+          onChangeText={(text) => setEmail(text)}
+          autoCapitalize="none"
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Icon name="lock" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          placeholder="Password"
+          placeholderTextColor="#999"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={(text) => setPassword(text)}
+        />
+        <TouchableOpacity style={styles.eyeIcon} onPress={togglePasswordVisibility}>
+          <Icon
+            name={showPassword ? 'eye-slash' : 'eye'}
+            size={20}
+            color="#999"
+          />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.inputContainer}>
+        <Icon name="lock" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          placeholder="Confirm Password"
+          placeholderTextColor="#999"
+          secureTextEntry={!showConfirmPassword}
+          value={confirmPassword}
+          onChangeText={(text) => setConfirmPassword(text)}
+        />
+        <TouchableOpacity style={styles.eyeIcon} onPress={toggleConfirmPasswordVisibility}>
+          <Icon
+            name={showConfirmPassword ? 'eye-slash' : 'eye'}
+            size={20}
+            color="#999"
+          />
+        </TouchableOpacity>
+      </View>
       <TouchableOpacity style={styles.registerButton} onPress={handleRegister} disabled={isLoading}>
         {isLoading ? (
           <ActivityIndicator color="#fff" size="small" />
@@ -135,5 +188,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textDecorationLine: 'underline',
   },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '80%',
+    height: 50,
+    borderColor: '#E9B44C', // Light orange border color
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  icon: {
+    marginHorizontal: 10,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 10,
+  },
 });
+
 export default RegistrationScreen;

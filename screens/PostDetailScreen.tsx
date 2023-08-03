@@ -27,7 +27,11 @@ const PostDetailScreen: React.FC<{route: any}> = ({route}) => {
   if (!post) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator
+          size="large"
+          color="#007AFF"
+          testID="loading-indicator"
+        />
       </View>
     );
   }
@@ -61,7 +65,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   goBackButton: {
-    backgroundColor: '#007AFF', // Vibrant blue button color
+    backgroundColor: '#FF5722', // Vibrant blue button color
     width: '50%',
     paddingVertical: 10,
     borderRadius: 10,
